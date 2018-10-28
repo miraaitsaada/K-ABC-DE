@@ -3,19 +3,6 @@ import random
 import k_means
 
 
-MAX_FE = 10000
-
-limit = 50
-SN = 100
-
-pop_size = 50
-
-F=0.6
-CR=0.9
-
-nb_appel_obj = 0
-
-
 def SSE(data, k, solution):
     somme_sse = 0
     for donnee in data:
@@ -37,10 +24,9 @@ def SSE1(data, k, solution):
 
 
 
-def fit(data, k, solution):
-    global nb_appel_obj
+def fit(data, k, solution, nb_appel_obj):    
     nb_appel_obj +=1
-    return 1/(1+SSE(data, k, solution))
+    return 1/(1+SSE(data, k, solution)) , nb_appel_obj
 
 
 def generer_solution(k, d, Xmin, Xmax):
@@ -51,7 +37,7 @@ def generer_solution(k, d, Xmin, Xmax):
     return solution
 
     
-def voisinage(k, d, solution, indice_solution, population, Gbest, fitness_solution_courante, nb_essais):
+def voisinage(k, d, solution, indice_solution, population, SN):
     #voisinage d'origine (basique)
     V=np.empty((k,d))
     g = random.randint(0,SN-1)
@@ -63,7 +49,7 @@ def voisinage(k, d, solution, indice_solution, population, Gbest, fitness_soluti
             V[i,j]=solution[i,j] + (Fi*(solution[i,j]-population[g,i,j]))
     return V
 
-def calcul_proba(fitness):
+def calcul_proba(fitness, SN):
     proba = np.empty(SN)
     somme_fit = 0
     for fitness_empl in fitness:
@@ -76,7 +62,7 @@ def calcul_proba(fitness):
              
     return proba
 
-def choix_onlooker1(population, fitness,proba):
+def choix_onlooker1(population, fitness, proba, SN):
     alea = random.uniform(0,1)
     j = 0
     for j in range(SN): #parcourir le tableau des probabilites
@@ -84,7 +70,7 @@ def choix_onlooker1(population, fitness,proba):
             return j
         
         
-def voisinage_gabc(k, d, solution, indice_solution, population, Gbest, fitness_solution_courante, nb_essais):
+def voisinage_gabc(k, d, solution, indice_solution, population, Gbest, SN):
     #voisinage Global Best
     V=np.empty((k,d))
     g = random.randint(0,SN-1)
@@ -97,7 +83,7 @@ def voisinage_gabc(k, d, solution, indice_solution, population, Gbest, fitness_s
             V[i,j]=solution[i,j] + (Fi*(solution[i,j]-population[g,i,j])) + (Psy * (Gbest[i,j] - solution[i,j]))
     return V
 
-def binomial(k, d, mutant, parent):
+def binomial(k, d, mutant, parent, CR):
     cross = np.empty((k,d))
     j0 = random.randint(0,k-1)
     
@@ -109,7 +95,7 @@ def binomial(k, d, mutant, parent):
     return cross
 
 
-def voisinage_employed(k , d , solution, indice_solution , population, Gbest,fitness_onlooker_courant, essais, fitness, F1):
+def voisinage_employed(k , d , solution, indice_solution, population, F1, SN):
     V = np.empty((k,d))
     i3 = random.randint(0,SN-1)
     while i3 == indice_solution :
@@ -130,7 +116,7 @@ def voisinage_employed(k , d , solution, indice_solution , population, Gbest,fit
 
 
     
-def voisinage_onlooker(k, d, solution, indice_solution, population, Gbest, fitness_solution_courante, nb_essais,fitness):
+def voisinage_onlooker(k, d, solution, indice_solution, population, Gbest, SN):
     #voisinage Global Best
     V=np.empty((k,d))
     g = random.randint(0,SN-1)
@@ -145,7 +131,7 @@ def voisinage_onlooker(k, d, solution, indice_solution, population, Gbest, fitne
     return V
 
 
-def mutation(k, d, solution, indice_solution, population, Gbest):
+def mutation(k, d, solution, indice_solution, population, Gbest, SN):
     V = np.empty((k,d))
     
     k1 = random.randint(0,SN-1)
@@ -161,7 +147,7 @@ def mutation(k, d, solution, indice_solution, population, Gbest):
     return V
 
 
-def current_to_rand1(k, d, indice_solution, population, Gbest, F1):
+def current_to_rand_1(k, d, indice_solution, population, Gbest, F1):
     V = np.empty((k,d))
     pop_size = population.shape[0]
     
@@ -186,7 +172,7 @@ def current_to_rand1(k, d, indice_solution, population, Gbest, F1):
     
 
 
-def rand1(k, d, indice_solution, population, Gbest, F):
+def rand_1(k, d, indice_solution, population, Gbest, F):
     U=np.empty((k,d))
     pop_size = population.shape[0]
     
@@ -209,9 +195,7 @@ def rand1(k, d, indice_solution, population, Gbest, F):
 # ABC ----------------------------------------------------------------------
 
 
-def ABC(data, k):
-        
-        global nb_appel_obj
+def ABC(data, k, MAX_FE = 10000, limit = 50, SN = 100):
         
         nb_appel_obj = 0
         essais = np.zeros(SN, dtype=int)
@@ -228,13 +212,12 @@ def ABC(data, k):
         population=np.empty((SN,k,d))
         fitness=np.empty((SN))
         
-        
         Gbest = generer_solution(k, d, Xmin, Xmax)
-        Fbest = fit(data, k, Gbest)
+        Fbest, nb_appel_obj = fit(data, k, Gbest, nb_appel_obj)
         
         for i in range(SN):
             solution = generer_solution(k, d, Xmin, Xmax)
-            fitness_solution = fit(data, k, solution)
+            fitness_solution, nb_appel_obj = fit(data, k, solution, nb_appel_obj)
             population[i] = solution
             fitness[i] = fitness_solution
         
@@ -248,8 +231,8 @@ def ABC(data, k):
             #phase des employees :
             for i, solution_courante in enumerate(population):
                     fitness_solution_courante = fitness[i]
-                    voisine = voisinage(k , d , solution_courante , i, population, Gbest, fitness_solution_courante, essais[i])
-                    fitness_voisine = fit(data, k, voisine)
+                    voisine = voisinage(k , d , solution_courante , i, population, SN)
+                    fitness_voisine, nb_appel_obj = fit(data, k, voisine, nb_appel_obj)
                     if (fitness_voisine > fitness_solution_courante):
                         population[i] = voisine
                         fitness[i] = fitness_voisine
@@ -263,19 +246,19 @@ def ABC(data, k):
                     
             #calcul des probabilite
             proba = np.empty(SN)
-            proba = calcul_proba(fitness)
+            proba = calcul_proba(fitness, SN)
         
             
             #phase des onlookers
             for i in range(SN):
                 #selection d'une solution
-                indice_choisi = choix_onlooker1(population,fitness,proba)
+                indice_choisi = choix_onlooker1(population, fitness, proba, SN)
                 onlooker_courant = population[indice_choisi]
                 fitness_onlooker_courant = fitness[indice_choisi]
                 
                 #Exploitation de la solution
-                voisine = voisinage(k , d , onlooker_courant, indice_choisi , population, Gbest,fitness_onlooker_courant, essais[indice_choisi])
-                fitness_voisine = fit(data, k, voisine)
+                voisine = voisinage(k , d , onlooker_courant, indice_choisi , population, SN)
+                fitness_voisine , nb_appel_obj = fit(data, k, voisine, nb_appel_obj)
                 
                 if (fitness_onlooker_courant < fitness_voisine):
                     population[indice_choisi] = voisine
@@ -294,7 +277,7 @@ def ABC(data, k):
                     essais[i]=0
                     nouvelle_solution = generer_solution(k, d, Xmin, Xmax)
                     population[i] = nouvelle_solution
-                    nouvelle_fitness = fit(data, k, nouvelle_solution)
+                    nouvelle_fitness , nb_appel_obj = fit(data, k, nouvelle_solution, nb_appel_obj)
                     fitness[i] = nouvelle_fitness
                     if (nouvelle_fitness > Fbest):
                         Gbest = nouvelle_solution
@@ -313,9 +296,7 @@ def ABC(data, k):
 
 # GABC---------------------------------------------------------------------------
 
-def GABC(data, k):
-        
-        global nb_appel_obj
+def GABC(data, k, MAX_FE = 10000, limit = 50, SN = 100):
         
         nb_appel_obj = 0
         
@@ -334,11 +315,11 @@ def GABC(data, k):
         fitness=np.empty((SN))
         
         Gbest = generer_solution(k, d, Xmin, Xmax)
-        Fbest = fit(data, k, Gbest)
+        Fbest , nb_appel_obj = fit(data, k, Gbest, nb_appel_obj)
         
         for i in range(SN):
             solution = generer_solution(k, d, Xmin, Xmax)
-            fitness_solution = fit(data, k, solution)
+            fitness_solution , nb_appel_obj = fit(data, k, solution, nb_appel_obj)
             population[i] = solution
             fitness[i] = fitness_solution
         
@@ -352,8 +333,8 @@ def GABC(data, k):
             #phase des employees :
             for i, solution_courante in enumerate(population):
                     fitness_solution_courante = fitness[i]
-                    voisine = voisinage_gabc(k , d , solution_courante , i, population, Gbest, fitness_solution_courante, essais[i])
-                    fitness_voisine = fit(data, k, voisine)
+                    voisine = voisinage_gabc(k , d , solution_courante , i, population, Gbest, SN)
+                    fitness_voisine , nb_appel_obj = fit(data, k, voisine, nb_appel_obj)
                     if (fitness_voisine > fitness_solution_courante):
                         population[i] = voisine
                         fitness[i] = fitness_voisine
@@ -367,19 +348,19 @@ def GABC(data, k):
                     
             #calcul des probabilites
             proba = np.empty(SN)
-            proba = calcul_proba(fitness)
+            proba = calcul_proba(fitness, SN)
         
             
             #phase des onlookers
             for i in range(SN):
                 #selection d'une solution
-                indice_choisi = choix_onlooker1(population,fitness,proba)
+                indice_choisi = choix_onlooker1(population, fitness, proba, SN)
                 onlooker_courant = population[indice_choisi]
                 fitness_onlooker_courant = fitness[indice_choisi]
                 
                 #Exploitation de la solution
-                voisine = voisinage_gabc(k , d , onlooker_courant, indice_choisi , population, Gbest,fitness_onlooker_courant, essais[indice_choisi])
-                fitness_voisine = fit(data, k, voisine)
+                voisine = voisinage_gabc(k , d , onlooker_courant, indice_choisi , population, Gbest, SN)
+                fitness_voisine , nb_appel_obj = fit(data, k, voisine, nb_appel_obj)
                 
                 if (fitness_onlooker_courant < fitness_voisine):
                     population[indice_choisi] = voisine
@@ -398,7 +379,7 @@ def GABC(data, k):
                     essais[i]=0
                     nouvelle_solution = generer_solution(k, d, Xmin, Xmax)
                     population[i] = nouvelle_solution
-                    nouvelle_fitness = fit(data, k, nouvelle_solution)
+                    nouvelle_fitness , nb_appel_obj = fit(data, k, nouvelle_solution, nb_appel_obj)
                     fitness[i] = nouvelle_fitness
                     if (nouvelle_fitness > Fbest):
                         Gbest = nouvelle_solution
@@ -415,9 +396,7 @@ def GABC(data, k):
 
 #ABC_DE -----------------------------------------------------------------
 
-def ABC_DE(data, k):
-        
-        global nb_appel_obj
+def ABC_DE(data, k, MAX_FE = 10000, limit = 50, SN = 100):
         
         nb_appel_obj = 0
         essais = np.zeros(SN, dtype=int)
@@ -436,11 +415,11 @@ def ABC_DE(data, k):
         
         
         Gbest = generer_solution(k, d, Xmin, Xmax)
-        Fbest = fit(data, k, Gbest)
+        Fbest , nb_appel_obj = fit(data, k, Gbest, nb_appel_obj)
         
         for i in range(SN):
             solution = generer_solution(k, d, Xmin, Xmax)
-            fitness_solution = fit(data, k, solution)
+            fitness_solution , nb_appel_obj = fit(data, k, solution, nb_appel_obj)
             population[i] = solution
             fitness[i] = fitness_solution
         
@@ -456,8 +435,8 @@ def ABC_DE(data, k):
             for i, solution_courante in enumerate(population):
                     fitness_solution_courante = fitness[i]
                     
-                    voisine = voisinage_employed(k , d , solution_courante , i, population, Gbest, fitness_solution_courante, essais[i],fitness,F1)
-                    fitness_voisine = fit(data, k, voisine)
+                    voisine = voisinage_employed(k , d , solution_courante , i, population, F1, SN)
+                    fitness_voisine , nb_appel_obj = fit(data, k, voisine, nb_appel_obj)
                     if (fitness_voisine > fitness_solution_courante):
                         population[i] = voisine
                         fitness[i] = fitness_voisine
@@ -471,19 +450,19 @@ def ABC_DE(data, k):
                     
             #calcul des probabilités
             proba = np.empty(SN)
-            proba = calcul_proba(fitness)
+            proba = calcul_proba(fitness, SN)
         
             
             #phase des onlookers
             for i in range(SN):
                 #selection d'une solution
-                indice_choisi = choix_onlooker1(population,fitness,proba)
+                indice_choisi = choix_onlooker1(population, fitness, proba, SN)
                 onlooker_courant = population[indice_choisi]
                 fitness_onlooker_courant = fitness[indice_choisi]
                 
                 #Exploitation de la solution
-                voisine = voisinage_onlooker(k , d , onlooker_courant, indice_choisi , population, Gbest,fitness_onlooker_courant, essais[indice_choisi], fitness)
-                fitness_voisine = fit(data, k, voisine)
+                voisine = voisinage_onlooker(k , d , onlooker_courant, indice_choisi , population, Gbest, SN)
+                fitness_voisine , nb_appel_obj = fit(data, k, voisine, nb_appel_obj)
                 
                 if (fitness_onlooker_courant < fitness_voisine):
                     population[indice_choisi] = voisine
@@ -499,8 +478,8 @@ def ABC_DE(data, k):
             
             #Phase mutation
             for i in range(SN):
-                S_new = mutation(k, d, solution, i, population, Gbest)
-                F_new = fit(data, k, S_new)
+                S_new = mutation(k, d, solution, i, population, Gbest, SN)
+                F_new , nb_appel_obj = fit(data, k, S_new, nb_appel_obj)
                  
                 if (fitness[i] < F_new):
                     population[i] = S_new
@@ -520,7 +499,7 @@ def ABC_DE(data, k):
                     essais[i]=0
                     nouvelle_solution = generer_solution(k, d, Xmin, Xmax)
                     population[i] = nouvelle_solution
-                    nouvelle_fitness = fit(data, k, nouvelle_solution)
+                    nouvelle_fitness , nb_appel_obj = fit(data, k, nouvelle_solution, nb_appel_obj)
                     fitness[i] = nouvelle_fitness
                     if (nouvelle_fitness > Fbest):
                         Gbest = nouvelle_solution
@@ -534,12 +513,10 @@ def ABC_DE(data, k):
 
 
 
-#ABC_D_K -----------------------------------------------------------------
+#ABC_DE_K -----------------------------------------------------------------
 
 
-def ABC_DE_K(data, k):
-        
-        global nb_appel_obj
+def ABC_DE_K(data, k, MAX_FE = 10000, limit = 50, SN = 100):
         
         nb_appel_obj = 0
         essais = np.zeros(SN, dtype=int)
@@ -558,12 +535,12 @@ def ABC_DE_K(data, k):
 
         Gbest = np.array(k_means.k_means(data.tolist(), k))
 
-        Fbest = fit(data, k, Gbest)
+        Fbest , nb_appel_obj = fit(data, k, Gbest, nb_appel_obj)
         
         
         for i in range(SN):
             solution = generer_solution(k, d, Xmin, Xmax)
-            fitness_solution = fit(data, k, solution)
+            fitness_solution , nb_appel_obj = fit(data, k, solution, nb_appel_obj)
             population[i] = solution
             fitness[i] = fitness_solution
         
@@ -579,8 +556,8 @@ def ABC_DE_K(data, k):
             for i, solution_courante in enumerate(population):
                     fitness_solution_courante = fitness[i]
                     
-                    voisine = voisinage_employed(k , d , solution_courante , i, population, Gbest, fitness_solution_courante, essais[i],fitness,F1)
-                    fitness_voisine = fit(data, k, voisine)
+                    voisine = voisinage_employed(k , d , solution_courante , i, population, F1, SN)
+                    fitness_voisine , nb_appel_obj = fit(data, k, voisine, nb_appel_obj)
                     if (fitness_voisine > fitness_solution_courante):
                         population[i] = voisine
                         fitness[i] = fitness_voisine
@@ -594,19 +571,19 @@ def ABC_DE_K(data, k):
                     
             #calcul des probabilites
             proba = np.empty(SN)
-            proba = calcul_proba(fitness)
+            proba = calcul_proba(fitness, SN)
         
             
             #phase des onlookers
             for i in range(SN):
                 #selection d'une solution
-                indice_choisi = choix_onlooker1(population,fitness,proba)
+                indice_choisi = choix_onlooker1(population, fitness, proba, SN)
                 onlooker_courant = population[indice_choisi]
                 fitness_onlooker_courant = fitness[indice_choisi]
                 
                 #Exploitation de la solution
-                voisine = voisinage_onlooker(k , d , onlooker_courant, indice_choisi , population, Gbest,fitness_onlooker_courant, essais[indice_choisi], fitness)
-                fitness_voisine = fit(data, k, voisine)
+                voisine = voisinage_onlooker(k , d , onlooker_courant, indice_choisi , population, Gbest, SN)
+                fitness_voisine , nb_appel_obj = fit(data, k, voisine, nb_appel_obj)
                 
                 if (fitness_onlooker_courant < fitness_voisine):
                     population[indice_choisi] = voisine
@@ -621,8 +598,8 @@ def ABC_DE_K(data, k):
                            
             #Phase mutation
             for i in range(SN):
-                S_new = mutation(k, d, solution, i, population, Gbest)
-                F_new = fit(data, k, S_new)
+                S_new = mutation(k, d, solution, i, population, Gbest, SN)
+                F_new , nb_appel_obj = fit(data, k, S_new, nb_appel_obj)
                  
                 if (fitness[i] < F_new):
                     population[i] = S_new
@@ -642,7 +619,7 @@ def ABC_DE_K(data, k):
                     essais[i]=0
                     nouvelle_solution = generer_solution(k, d, Xmin, Xmax)
                     population[i] = nouvelle_solution
-                    nouvelle_fitness = fit(data, k, nouvelle_solution)
+                    nouvelle_fitness , nb_appel_obj = fit(data, k, nouvelle_solution, nb_appel_obj)
                     fitness[i] = nouvelle_fitness
                     if (nouvelle_fitness > Fbest):
                         Gbest = nouvelle_solution
@@ -652,10 +629,9 @@ def ABC_DE_K(data, k):
 
 
 
-def DE_rand1_bin(data , k):
+def DE_rand_1_bin(data , k, MAX_FE = 10000, pop_size = 50, F = 0.6, CR = 0.9):
     
     #Génération de la population initiale
-    global nb_appel_obj
     
     nb_appel_obj = 0
     
@@ -671,11 +647,11 @@ def DE_rand1_bin(data , k):
     population=np.empty((pop_size,k,d));
     fitness=np.empty((pop_size))
     Gbest = generer_solution(k, d, Xmin, Xmax)
-    Fbest = fit(data, k, Gbest)
+    Fbest , nb_appel_obj = fit(data, k, Gbest, nb_appel_obj)
 
     for i in range(pop_size):
         solution = generer_solution(k, d, Xmin, Xmax)
-        fitness_solution = fit(data, k, solution)
+        fitness_solution , nb_appel_obj = fit(data, k, solution, nb_appel_obj)
         population[i] = solution
         fitness[i] = fitness_solution
         if (fitness_solution > Fbest):
@@ -687,10 +663,10 @@ def DE_rand1_bin(data , k):
             fitness_parent = fitness[i]
             
             #génération du mutant
-            trial_vector = rand1(k, d, i, population, Gbest, F)
+            trial_vector = rand_1(k, d, i, population, Gbest, F)
             #génération du descendant
-            enfant = binomial(k, d, trial_vector, population[i])
-            fitness_enfant = fit(data, k , enfant)
+            enfant = binomial(k, d, trial_vector, population[i], CR)
+            fitness_enfant , nb_appel_obj = fit(data, k , enfant, nb_appel_obj)
             
             #sélection entre le parent et le descendant
             if(fitness_enfant > fitness_parent):
@@ -706,10 +682,9 @@ def DE_rand1_bin(data , k):
 
 #current to rand ---------------------------------------------------
 
-def DE_current_to_rand1(data , k):
+def DE_current_to_rand_1(data , k, MAX_FE = 10000, pop_size = 50):
     
     #generation de la population initiale
-    global nb_appel_obj
     
     nb_appel_obj = 0
     
@@ -725,11 +700,11 @@ def DE_current_to_rand1(data , k):
     population=np.empty((pop_size,k,d));
     fitness=np.empty((pop_size))
     Gbest = generer_solution(k, d, Xmin, Xmax)
-    Fbest = fit(data, k, Gbest)
+    Fbest , nb_appel_obj = fit(data, k, Gbest, nb_appel_obj)
 
     for i in range(pop_size):
         solution = generer_solution(k, d, Xmin, Xmax)
-        fitness_solution = fit(data, k, solution)
+        fitness_solution , nb_appel_obj = fit(data, k, solution, nb_appel_obj)
         population[i] = solution
         fitness[i] = fitness_solution
         if (fitness_solution > Fbest):
@@ -742,9 +717,9 @@ def DE_current_to_rand1(data , k):
             fitness_parent = fitness[i]
             
             #generation du mutant 
-            trial_vector = current_to_rand1(k, d, i, population, Gbest, F1)
+            trial_vector = current_to_rand_1(k, d, i, population, Gbest, F1)
             enfant = trial_vector
-            fitness_enfant = fit(data, k , enfant)
+            fitness_enfant , nb_appel_obj = fit(data, k , enfant, nb_appel_obj)
             
             #sélection entre le mutant et le parent
             if(fitness_enfant > fitness_parent):
@@ -755,3 +730,7 @@ def DE_current_to_rand1(data , k):
                     Fbest = fitness_enfant
         
     return Gbest
+
+
+
+
