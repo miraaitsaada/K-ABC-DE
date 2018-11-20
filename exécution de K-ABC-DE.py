@@ -128,6 +128,7 @@ def clustering_KABCDE (nom_fichier , delimiteur , k):
         ax.scatter(moyenne_elements.T[0], moyenne_elements.T[1], s= 55, marker = 'x', color = 'black')
         
         plt.legend(handles=clusts, prop={'size':7})#
+        plt.show()
     
     else:
         if(d==4):
@@ -233,6 +234,7 @@ def clustering_KABCDE (nom_fichier , delimiteur , k):
             plt.tick_params(axis = "x" , pad = 0.1, labelsize = '6')#direction='in', length=1.5, width=1,
             plt.tick_params(axis = "z" , pad = 0.1, labelsize = '6')#direction='in', length=1.5, width=1,
             plt.tick_params(axis = "y" , pad = 0.1, labelsize = '6')#direction='in', length=1.5, width=1,
+            plt.show()
                            
         else :
             if(d==3):
@@ -292,6 +294,7 @@ def clustering_KABCDE (nom_fichier , delimiteur , k):
                 plt.tick_params(axis = "y" , pad = 0.1, labelsize = '6')#direction='in', length=1.5, width=1,
     
                 plt.legend(handles=clusts, prop={'size':7})#
+                plt.show()
         
             else :
                 if(d>4):
@@ -405,11 +408,12 @@ def clustering_KABCDE (nom_fichier , delimiteur , k):
                     plt.tick_params(axis = "x" , pad = 0.1, labelsize = '6')#direction='in', length=1.5, width=1,
                     plt.tick_params(axis = "z" , pad = 0.1, labelsize = '6')#direction='in', length=1.5, width=1,
                     plt.tick_params(axis = "y" , pad = 0.1, labelsize = '6')#direction='in', length=1.5, width=1,
-                        
+                    plt.show()
+            
 if __name__ == "__main__":
     
-    nom_fichier = 'iris.data.txt'
-    #nom_fichier = "iris3D.data.txt"
+    #nom_fichier = 'iris.data.txt'
+    nom_fichier = "iris3D.data.txt"
     #nom_fichier = "iris_sepal.data.txt"
     #nom_fichier = "iris_petal.data.txt"
     
