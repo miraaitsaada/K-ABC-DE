@@ -10,17 +10,17 @@ import matplotlib.gridspec as gridspec
 from mpl_toolkits.mplot3d import Axes3D
 import time
 
-def clustering_KABCDE (nom_fichier , delimiteur , k):
+def clustering_KABCDE (file_name , delimiter , k):
     
-    data = np.loadtxt(nom_fichier, delimiter=delimiteur)
+    data = np.loadtxt(file_name, delimiter=delimiter)
     
     debut = time.time()
-    resultat = K_ABC_DE.K_ABC_DE (data, k)
+    result = K_ABC_DE.K_ABC_DE (data, k)
     fin = time.time()
     
     temps = fin-debut
     
-    SSE = K_ABC_DE.SSE(data, k, resultat)
+    SSE = K_ABC_DE.SSE(data, k, result)
     
     colormap = np.array(['#F06A73','#46C6AC','#919191'])
     
@@ -30,8 +30,8 @@ def clustering_KABCDE (nom_fichier , delimiteur , k):
     classification = np.empty(data_size, dtype=int)
     
     for indice_donnee in range(data_size):
-        indice_centroid = min([(i[0], np.linalg.norm(data[indice_donnee]-resultat[i[0]])) \
-                                for i in enumerate(resultat)], key=lambda t:t[1])[0]
+        indice_centroid = min([(i[0], np.linalg.norm(data[indice_donnee]-result[i[0]])) \
+                                for i in enumerate(result)], key=lambda t:t[1])[0]
         classification[indice_donnee] = indice_centroid
     
     nb_elements = np.zeros(k, dtype = int)
@@ -50,28 +50,28 @@ def clustering_KABCDE (nom_fichier , delimiteur , k):
     for i in range(k):
         moyenne_elements[i] = moyenne_elements[i] / np.copy(nb_elements[i])
     
-    resultat_dans_lordre = np.empty((k,d))
+    result_dans_lordre = np.empty((k,d))
     
     indice_deja_pris = []
     
     for i, centroid in enumerate(moyenne_elements):
-        indice_le_plus_proche = 0
-        while(indice_le_plus_proche in indice_deja_pris):
-            indice_le_plus_proche += 1
+        closest_ind = 0
+        while(closest_ind in indice_deja_pris):
+            closest_ind += 1
             
-        distance_minimale = np.linalg.norm(centroid - resultat[indice_le_plus_proche])
+        distance_minimale = np.linalg.norm(centroid - result[closest_ind])
         
         for j, cluster_y in enumerate(moyenne_elements):
             if(not (j in indice_deja_pris)):
-                distance = np.linalg.norm(centroid - resultat[j])
+                distance = np.linalg.norm(centroid - result[j])
                 if(distance <= distance_minimale):
                      distance_minimale = distance
-                     indice_le_plus_proche = j
+                     closest_ind = j
     
-        indice_deja_pris.append(indice_le_plus_proche)
-        resultat_dans_lordre[i] = resultat[indice_le_plus_proche]
+        indice_deja_pris.append(closest_ind)
+        result_dans_lordre[i] = result[closest_ind]
     
-    resultat = np.copy(resultat_dans_lordre)
+    result = np.copy(result_dans_lordre)
     
     if (d==2):
         
@@ -79,7 +79,7 @@ def clustering_KABCDE (nom_fichier , delimiteur , k):
     
         fig = pylab.figure(1, figsize=(5,10))
         
-        plt.title('Classification à 2 dimensions du fichier : " '+nom_fichier+' "\n' ,fontsize = 8)
+        plt.title('Classification à 2 dimensions du fichier : " '+file_name+' "\n' ,fontsize = 8)
     
         for spine in plt.gca().spines.values():
             spine.set_visible(False)
@@ -104,7 +104,7 @@ def clustering_KABCDE (nom_fichier , delimiteur , k):
         st = ''
         for i in range(k):
             cluster = np.empty(d, dtype=float)
-            for x,y  in enumerate(resultat[i]):
+            for x,y  in enumerate(result[i]):
                 cluster[x] = ("{0:.3f}".format(y))
             clust = ''
             for j in range(d):    
@@ -136,7 +136,7 @@ def clustering_KABCDE (nom_fichier , delimiteur , k):
     
             fig = pylab.figure(1, figsize=(5,10))
             
-            plt.title('Représentation 3D du clustering du fichier : " '+nom_fichier+' "\n' ,fontsize = 8)
+            plt.title('Représentation 3D du clustering du fichier : " '+file_name+' "\n' ,fontsize = 8)
     
             for spine in plt.gca().spines.values():
                 spine.set_visible(False)
@@ -162,7 +162,7 @@ def clustering_KABCDE (nom_fichier , delimiteur , k):
             st = ''
             for i in range(k):
                 cluster = np.empty(d, dtype=float)
-                for x,y  in enumerate(resultat[i]):
+                for x,y  in enumerate(result[i]):
                     cluster[x] = ("{0:.3f}".format(y))
                 clust = ''
                 for j in range(d):    
@@ -241,7 +241,7 @@ def clustering_KABCDE (nom_fichier , delimiteur , k):
                 gs = gridspec.GridSpec(7, 4)
     
                 fig = pylab.figure(1, figsize=(5,10))
-                plt.title('Représentation 3D du clustering du fichier : " '+nom_fichier+' "\n' ,fontsize = 8)
+                plt.title('Représentation 3D du clustering du fichier : " '+file_name+' "\n' ,fontsize = 8)
     
                 for spine in plt.gca().spines.values():
                     spine.set_visible(False)
@@ -267,7 +267,7 @@ def clustering_KABCDE (nom_fichier , delimiteur , k):
                 st = ''
                 for i in range(k):
                     cluster = np.empty(d, dtype=float)
-                    for x,y  in enumerate(resultat[i]):
+                    for x,y  in enumerate(result[i]):
                         cluster[x] = ("{0:.3f}".format(y))
                     clust = ''
                     for j in range(d):    
@@ -301,7 +301,7 @@ def clustering_KABCDE (nom_fichier , delimiteur , k):
                     gs = gridspec.GridSpec(7, 4)
     
                     fig = pylab.figure(1, figsize=(5,10))
-                    plt.title('Représentation 3D du clustering du fichier : " '+nom_fichier+' "\n' ,fontsize = 8)
+                    plt.title('Représentation 3D du clustering du fichier : " '+file_name+' "\n' ,fontsize = 8)
     
                     for spine in plt.gca().spines.values():
                         spine.set_visible(False)
@@ -328,7 +328,7 @@ def clustering_KABCDE (nom_fichier , delimiteur , k):
                     st = ''
                     for i in range(k):
                         cluster = np.empty(d, dtype=float)
-                        for x,y  in enumerate(resultat[i]):
+                        for x,y  in enumerate(result[i]):
                             cluster[x] = ("{0:.3f}".format(y))
                         clust = ''
                         for j in range(d):    
@@ -412,15 +412,15 @@ def clustering_KABCDE (nom_fichier , delimiteur , k):
             
 if __name__ == "__main__":
     
-    #nom_fichier = 'iris.data.txt'
-    nom_fichier = "iris3D.data.txt"
-    #nom_fichier = "iris_sepal.data.txt"
-    #nom_fichier = "iris_petal.data.txt"
+    #file_name = 'iris.data.txt'
+    file_name = "iris3D.data.txt"
+    #file_name = "iris_sepal.data.txt"
+    #file_name = "iris_petal.data.txt"
     
-    delimiteur = ','
+    delimiter = ','
     
     k=3
     
-    clustering_KABCDE(nom_fichier , ',' , 3)
+    clustering_KABCDE(file_name , ',' , 3)
     
     
